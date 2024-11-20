@@ -1,4 +1,12 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:pokemon_app_games/button.dart';
+import 'package:pokemon_app_games/characters/boy.dart';
+import 'package:pokemon_app_games/characters/oak.dart';
+import 'package:pokemon_app_games/maps/boundaries.dart';
+import 'package:pokemon_app_games/maps/littleroot.dart';
+import 'package:pokemon_app_games/maps/pokelab.dart';
+import 'package:pokemon_app_games/maps/pokelabboundsries.dart';
 
 void main() {
   runApp(const MyApp());
@@ -7,119 +15,450 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: HomePage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _HomePageState extends State<HomePage> {
+  /*
+  VARIABLES
+  */
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+  //literoot
+  double mapX = 1.7;
+  double mapY = 0.55;
+
+  //pokelab
+  double LabmapX = 0;
+  double LabmapY = 0;
+
+  //battleground
+  double battlemapX = 0;
+  double battlemapY = 0;
+
+  //professor oak
+  String oakDirection = 'Down';
+  static double oakX = 0.1;
+  static double oakY = 0.35;
+  bool chatStarted = false;
+  int countPressingA = -1;
+
+  //boycharacter
+  int boySpriteCount = 0;
+  String boyDirection = 'Down';
+
+  //game stuff
+  String currentLocation = 'littleroot';
+  double step = 0.20;
+
+  //no mans land for littleroot(package:pokemon_app_games/maps/boundaries.dart)
+  int aClickCount = 0;
+  Timer? _clickTimer;
+
+  void moveUp() {
+    boyDirection = 'Up';
+
+    if (currentLocation == 'littleroot') {
+      if (canMoveTo(boyDirection, noMansLandLittleroot, mapX, mapY)) {
+        setState(() {
+          mapY += step;
+        });
+      }
+      if (double.parse((mapX).toStringAsFixed(4)) == 0.9 &&
+          double.parse((mapY).toStringAsFixed(4)) == -1.05) {
+        setState(() {
+          currentLocation = 'PokemonLab';
+          LabmapX = -0.4;
+          LabmapY = -4.8;
+        });
+      }
+    } else if (currentLocation == 'PokemonLab') {
+      if (canMoveTo(boyDirection, noMansLandPokeLab, LabmapX, LabmapY)) {
+        setState(() {
+          LabmapY += step;
+        });
+      }
+    }
+
+    animateWalk();
+  }
+
+  void moveDown() {
+    boyDirection = 'Down';
+
+    if (currentLocation == 'littleroot') {
+      if (canMoveTo(boyDirection, noMansLandLittleroot, mapX, mapY)) {
+        setState(() {
+          mapY -= step;
+        });
+      }
+    } else if (currentLocation == 'PokemonLab') {
+      if (canMoveTo(boyDirection, noMansLandPokeLab, LabmapX, LabmapY)) {
+        setState(() {
+          LabmapY -= step;
+        });
+      }
+      if (double.parse((LabmapX).toStringAsFixed(4)) == -0.4 &&
+          double.parse((LabmapY).toStringAsFixed(4)) == -5.0) {
+        setState(() {
+          currentLocation = 'littleroot';
+          mapX = 0.9;
+          mapY = -1.25;
+        });
+      }
+    }
+
+    animateWalk();
+  }
+
+  void moveLeft() {
+    boyDirection = 'Left';
+
+    if (currentLocation == 'littleroot') {
+      if (canMoveTo(boyDirection, noMansLandLittleroot, mapX, mapY)) {
+        setState(() {
+          mapX += step;
+        });
+      }
+    } else if (currentLocation == 'PokemonLab') {
+      if (canMoveTo(boyDirection, noMansLandPokeLab, LabmapX, LabmapY)) {
+        setState(() {
+          LabmapX += step;
+        });
+      }
+    }
+
+    animateWalk();
+  }
+
+  void moveRight() {
+    boyDirection = 'Right';
+
+    if (currentLocation == 'littleroot') {
+      if (canMoveTo(boyDirection, noMansLandLittleroot, mapX, mapY)) {
+        setState(() {
+          mapX -= step;
+        });
+      }
+    } else if (currentLocation == 'PokemonLab') {
+      if (canMoveTo(boyDirection, noMansLandPokeLab, LabmapX, LabmapY)) {
+        setState(() {
+          LabmapX -= step;
+        });
+      }
+    }
+
+    animateWalk();
+  }
+
+  bool showImage = false; // Variable para rastrear si se debe mostrar la imagen
+
+  void pressedB() {
+    if (currentLocation == 'littleroot') {
+      setState(() {
+        showImage = false; // Cambia el estado para ocultar la imagen
+      });
+    } else if (currentLocation == 'battleground') {
+      setState(() {
+        showImage = false; // Cambia el estado para ocultar la imagen
+      });
+    }
+  }
+
+  void pressedA() {
+    aClickCount++;
+    if (_clickTimer != null && _clickTimer!.isActive) {
+      _clickTimer!.cancel();
+    }
+    _clickTimer = Timer(Duration(seconds: 1), () {
+      aClickCount = 0;
     });
+
+    if (currentLocation == 'littleroot') {
+      if (aClickCount == 1) {
+        double interactionRange = 0.1;
+
+        // Recorre cada dirección y sus posiciones
+        for (var entry in oakPositions.entries) {
+          String direction = entry.key; // Obtiene la dirección
+          List<List<double>> positions = entry.value;
+
+          for (var position in positions) {
+            double oakX = position[0];
+            double oakY = position[1];
+
+            // Verifica si el jugador está cerca de Oak
+            if ((cleanNum(mapX - oakX).abs() < interactionRange) &&
+                (cleanNum(mapY - oakY).abs() < interactionRange)) {
+              // Aquí ya tenemos la dirección directamente de la entrada
+              String oakDirection =
+                  direction; // Asigna la dirección directamente
+
+              // Muestra la imagen y actualiza la dirección
+              setState(() {
+                showImage = true;
+                this.oakDirection =
+                    oakDirection; // Actualiza la dirección de Oak
+              });
+            }
+          }
+        }
+      } else if (aClickCount == 2) {
+        double interactionRange =
+            0.1; // Recorre cada dirección y sus posiciones
+        for (var entry in oakPositions.entries) {
+          String direction = entry.key; // Obtiene la dirección
+          List<List<double>> positions = entry.value;
+          for (var position in positions) {
+            double battlemapX = position[0];
+            double battlemapY = position[1];
+            if ((cleanNum(mapX - battlemapX).abs() < interactionRange) &&
+                (cleanNum(mapY - battlemapY).abs() < interactionRange)) {
+              setState(() {
+                currentLocation = 'battleground';
+                mapX = 0;
+                mapY = 0;
+              });
+            }
+          }
+        }
+      }
+    }
+  }
+
+  void animateWalk() {
+    print('x: ' + mapX.toString() + ', y: ' + mapY.toString());
+    print('x: ' + LabmapX.toString() + ', y: ' + LabmapY.toString());
+
+    Timer.periodic(Duration(milliseconds: 50), (timer) {
+      setState(() {
+        boySpriteCount++;
+      });
+
+      if (boySpriteCount == 3) {
+        boySpriteCount = 0;
+        timer.cancel();
+      }
+    });
+  }
+
+  double cleanNum(double num) {
+    return double.parse(num.toStringAsFixed(4));
+  }
+
+  bool canMoveTo(String direction, var noMansLand, double x, double y) {
+    double stepX = 0;
+    double stepY = 0;
+
+    if (direction == 'Left') {
+      stepX = step;
+      stepY = 0;
+    } else if (direction == 'Right') {
+      stepX = -step;
+      stepY = 0;
+    } else if (direction == 'Up') {
+      stepX = 0;
+      stepY = step;
+    } else if (direction == 'Down') {
+      stepX = 0;
+      stepY = -step;
+    }
+
+    for (int i = 0; i < noMansLand.length; i++) {
+      if ((cleanNum(noMansLand[i][0]) == cleanNum(x + stepX)) &&
+          (cleanNum(noMansLand[i][1]) == cleanNum(y + stepY))) {
+        return false;
+      }
+    }
+    return true;
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+      body: Column(
+        children: [
+          AspectRatio(
+            aspectRatio: 1,
+            child: Container(
+              color: Colors.black,
+              child: Stack(
+                children: [
+                  //Littleroot
+                  LittleRoot(
+                    x: mapX,
+                    y: mapY,
+                    currentMap: currentLocation,
+                  ),
+
+                  //Pokelab
+                  MyPokeLab(
+                      x: LabmapX, y: LabmapY, currentMap: currentLocation),
+
+                  //MyBoy
+                  Container(
+                    alignment: const Alignment(0, 0),
+                    child: MyBoy(
+                      location: currentLocation,
+                      boySpriteCount: boySpriteCount,
+                      direction: boyDirection,
+                    ),
+                  ),
+
+                  //ProfessorOak
+                  Container(
+                    alignment: const Alignment(0, 0),
+                    child: ProfOak(
+                      x: mapX,
+                      y: mapY + 0.05,
+                      location: currentLocation,
+                      oakDirection: oakDirection,
+                    ),
+                  ),
+                  // Mostrar la imagen si showImage es true
+                  if (showImage)
+                    Container(
+                      alignment: Alignment.center,
+                      child: Image.asset(
+                          'lib/pokemom_image/text.png'), // Muestra la imagen
+                    ),
+                ],
+              ),
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+          ),
+          Expanded(
+            child: Container(
+              color: Colors.grey[800],
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Text(
+                          'G A M E B O Y',
+                          style: TextStyle(color: Colors.white, fontSize: 18),
+                        ),
+                        Text(
+                          '❤️',
+                          style: TextStyle(color: Colors.red, fontSize: 20),
+                        ),
+                        Text(
+                          'F L U T T E R',
+                          style: TextStyle(color: Colors.white, fontSize: 18),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Row(
+                          children: [
+                            Column(
+                              children: [
+                                Container(
+                                  height: 50,
+                                  width: 50,
+                                ),
+                                MyButton(
+                                  text: ' ◁ ',
+                                  function: moveLeft,
+                                ),
+                                Container(
+                                  height: 50,
+                                  width: 50,
+                                ),
+                              ],
+                            ),
+                            Column(
+                              children: [
+                                MyButton(
+                                  text: ' △ ',
+                                  function: moveUp,
+                                ),
+                                Container(
+                                  height: 50,
+                                  width: 50,
+                                ),
+                                MyButton(
+                                  text: ' ▽ ',
+                                  function: moveDown,
+                                ),
+                              ],
+                            ),
+                            Column(
+                              children: [
+                                Container(
+                                  height: 50,
+                                  width: 50,
+                                ),
+                                MyButton(
+                                  text: ' ▷ ', //▲▼▶◀
+                                  function: moveRight,
+                                ),
+                                Container(
+                                  height: 50,
+                                  width: 50,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Column(
+                              children: [
+                                Container(
+                                  height: 50,
+                                  width: 50,
+                                ),
+                                MyButton(
+                                  text: 'B',
+                                  function: pressedB,
+                                ),
+                              ],
+                            ),
+                            Column(
+                              children: [
+                                MyButton(
+                                  text: 'A',
+                                  function: pressedA,
+                                ),
+                                Container(
+                                  height: 50,
+                                  width: 50,
+                                ),
+                              ],
+                            )
+                          ],
+                        ),
+                      ],
+                    ),
+                    const Text(
+                      'C R E A T E D B Y K O K O',
+                      style: TextStyle(color: Colors.white, fontSize: 18),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
